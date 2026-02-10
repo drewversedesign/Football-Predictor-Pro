@@ -1,8 +1,8 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { HistoricalMatch, BacktestResult, LeagueStats, TeamStats } from '../types';
 import { calculatePrediction } from '../utils/engine';
 import { MOCK_TEAMS } from '../constants';
+import { authClient } from '../services/authService';
 
 interface BacktestDashboardProps {
   historicalMatches: HistoricalMatch[];
@@ -48,6 +48,30 @@ export const BacktestDashboard: React.FC<BacktestDashboardProps> = ({ historical
       over25Accuracy: (results.filter(r => r.isOver25Correct).length / results.length) * 100,
     };
   }, [results]);
+
+  useEffect(() => {
+    if (stats && results.length > 0) {
+      const saveResults = async () => {
+        const session = await authClient.getSession();
+        fetch('/api/backtest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data?.session?.token}`
+          },
+          body: JSON.stringify({
+            leagueId: league.id,
+            season: 2024,
+            accuracy1x2: stats.outcomeAccuracy,
+            accuracyBtts: stats.bttsAccuracy,
+            accuracyOverUnder: stats.over25Accuracy,
+            totalMatches: results.length
+          })
+        });
+      };
+      saveResults();
+    }
+  }, [stats, results.length, league.id]);
 
   if (historicalMatches.length === 0) {
     return (

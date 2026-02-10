@@ -74,4 +74,4 @@ export interface AIAnalysis {
   sources?: GroundingSource[];
 }
 
-export type AppView = 'PREDICT' | 'BACKTEST' | 'LEAGUE_ANALYTICS' | 'SETTINGS';
+export type AppView = 'PREDICT' | 'BACKTEST' | 'LEAGUE_ANALYTICS' | 'SETTINGS' | 'MY_PREDICTIONS' | 'FEED';

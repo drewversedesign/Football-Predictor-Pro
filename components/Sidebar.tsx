@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { AppView } from '../types';
+import { signOut, useSession } from '../services/authService';
 
 interface SidebarProps {
   currentView: AppView;
@@ -9,6 +9,8 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
+  const { data: session } = useSession();
+
   const menuItems = [
     {
       id: 'PREDICT' as AppView,
@@ -19,6 +21,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
         </svg>
       ),
       description: 'Live Predictions'
+    },
+    {
+      id: 'FEED' as AppView,
+      label: 'Expert Feed',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+        </svg>
+      ),
+      description: 'Global Insights'
+    },
+    {
+      id: 'MY_PREDICTIONS' as AppView,
+      label: 'My Tracked',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+        </svg>
+      ),
+      description: 'Prediction History'
     },
     {
       id: 'BACKTEST' as AppView,
@@ -45,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
       label: 'Settings',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ),
@@ -94,8 +116,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
         ))}
       </div>
 
-      <div className="p-6 border-t border-slate-700/50 hidden lg:block">
-        <div className="bg-slate-900/50 rounded-2xl p-4 border border-slate-700/30">
+      <div className="p-4 border-t border-slate-700/50 mt-auto">
+        {session?.user && (
+          <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-700/30 mb-2">
+            <img src={session.user.image || `https://ui-avatars.com/api/?name=${session.user.name}`} alt="" className="w-8 h-8 rounded-full border border-slate-600" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-black text-white truncate uppercase tracking-tighter">{session.user.name}</div>
+              <div className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest">Premium User</div>
+            </div>
+            <button
+              onClick={() => signOut()}
+              className="p-2 text-slate-500 hover:text-rose-400 transition-colors"
+              title="Logout"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
+        )}
+        <div className="bg-slate-900/50 rounded-2xl p-4 border border-slate-700/30 hidden lg:block">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">System Status</span>
