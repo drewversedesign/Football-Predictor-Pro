@@ -4,6 +4,8 @@ import { MatchPredictor } from './components/MatchPredictor';
 import { BacktestDashboard } from './components/BacktestDashboard';
 import { Sidebar } from './components/Sidebar';
 import { LeagueAnalytics } from './components/LeagueAnalytics';
+import { MyPredictions } from './components/MyPredictions';
+import { ExpertFeed } from './components/ExpertFeed';
 import { SettingsView } from './components/SettingsView';
 import { LEAGUES, MOCK_TEAMS, MOCK_MATCHES } from './constants';
 import { Match, TeamStats, HistoricalMatch, AppView } from './types';
@@ -283,6 +285,7 @@ const App: React.FC = () => {
                         AI Tactical Scan
                       </button>
                     </div>
+import { ValueBetFinder } from './components/ValueBetFinder';
                     <MatchPredictor match={selectedMatch} customStats={customStats} />
                   </div>
                 ) : (
@@ -308,6 +311,8 @@ const App: React.FC = () => {
             </div>
           )}
 
+{currentView === 'FEED' && <ExpertFeed />}
+{currentView === 'MY_PREDICTIONS' && <MyPredictions />}
           {currentView === 'LEAGUE_ANALYTICS' && (
             <LeagueAnalytics leagues={LEAGUES} />
           )}

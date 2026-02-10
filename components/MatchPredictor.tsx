@@ -1,10 +1,11 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { Match, TeamStats, PredictionResult, AIAnalysis, LeagueStats } from '../types';
 import { calculatePrediction } from '../utils/engine';
 import { LEAGUES, MOCK_TEAMS } from '../constants';
 import { getAIAnalysis } from '../services/geminiService';
+import { savePrediction } from '../services/predictionService';
 import { StatCard } from './StatCard';
+import { ValueBetFinder } from './ValueBetFinder';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface MatchPredictorProps {
@@ -68,6 +69,8 @@ export const MatchPredictor: React.FC<MatchPredictorProps> = ({ match, customSta
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
 
   const stats = customStats || MOCK_TEAMS;
   const homeTeam = stats[match.homeTeam.id];
@@ -79,6 +82,7 @@ export const MatchPredictor: React.FC<MatchPredictorProps> = ({ match, customSta
     setPrediction(pred);
     
     setAnalysis(null);
+    setSaveStatus('IDLE');
     const fetchAI = async () => {
       setLoading(true);
       const aiRes = await getAIAnalysis(match, homeTeam, awayTeam, pred);
@@ -88,6 +92,29 @@ export const MatchPredictor: React.FC<MatchPredictorProps> = ({ match, customSta
 
     fetchAI();
   }, [match, homeTeam, awayTeam, league]);
+
+  const handleSave = async (type: string, value: string) => {
+    if (!prediction) return;
+    setIsSaving(true);
+    try {
+      await savePrediction({
+        matchId: match.id,
+        homeTeam: match.homeTeam.name,
+        awayTeam: match.awayTeam.name,
+        matchDate: match.utcDate,
+        predictedHomeXg: prediction.homeXG,
+        predictedAwayXg: prediction.awayXG,
+        predictionType: type,
+        predictionValue: value
+      });
+      setSaveStatus('SUCCESS');
+      setTimeout(() => setSaveStatus('IDLE'), 3000);
+    } catch (e) {
+      setSaveStatus('ERROR');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!prediction) return null;
 
@@ -147,24 +174,61 @@ export const MatchPredictor: React.FC<MatchPredictorProps> = ({ match, customSta
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard 
-          label="Match Outcome (1X2)" 
-          value={`${(prediction.probabilities.homeWin * 100).toFixed(0)}% - ${(prediction.probabilities.draw * 100).toFixed(0)}% - ${(prediction.probabilities.awayWin * 100).toFixed(0)}%`}
-          subValue="Expected Probabilities"
-        />
-        <StatCard 
-          label="BTTS Prob" 
-          value={prediction.probabilities.btts > 0.5 ? "LIKELY" : "UNLIKELY"}
-          subValue={`${(prediction.probabilities.btts * 100).toFixed(0)}% Probability`}
-          colorClass={prediction.probabilities.btts > 0.5 ? "text-emerald-400" : "text-rose-400"}
-        />
-        <StatCard 
-          label="Total Goals (2.5)" 
-          value={prediction.probabilities.over25 > 0.5 ? "OVER" : "UNDER"}
-          subValue={`${(prediction.probabilities.over25 * 100).toFixed(0)}% Probability`}
-          colorClass="text-emerald-400"
-        />
+        <div className="group relative">
+          <StatCard
+            label="Match Outcome (1X2)"
+            value={`${(prediction.probabilities.homeWin * 100).toFixed(0)}% - ${(prediction.probabilities.draw * 100).toFixed(0)}% - ${(prediction.probabilities.awayWin * 100).toFixed(0)}%`}
+            subValue="Expected Probabilities"
+          />
+          <button
+            onClick={() => handleSave('1X2', prediction.probabilities.homeWin > prediction.probabilities.awayWin ? 'Home' : 'Away')}
+            className="absolute top-2 right-2 p-1.5 bg-slate-900/50 rounded-lg text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Save Prediction"
+          >
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
+          </button>
+        </div>
+        <div className="group relative">
+          <StatCard
+            label="BTTS Prob"
+            value={prediction.probabilities.btts > 0.5 ? "LIKELY" : "UNLIKELY"}
+            subValue={`${(prediction.probabilities.btts * 100).toFixed(0)}% Probability`}
+            colorClass={prediction.probabilities.btts > 0.5 ? "text-emerald-400" : "text-rose-400"}
+          />
+          <button
+            onClick={() => handleSave('BTTS', prediction.probabilities.btts > 0.5 ? 'YES' : 'NO')}
+            className="absolute top-2 right-2 p-1.5 bg-slate-900/50 rounded-lg text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Save Prediction"
+          >
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
+          </button>
+        </div>
+        <div className="group relative">
+          <StatCard
+            label="Total Goals (2.5)"
+            value={prediction.probabilities.over25 > 0.5 ? "OVER" : "UNDER"}
+            subValue={`${(prediction.probabilities.over25 * 100).toFixed(0)}% Probability`}
+            colorClass="text-emerald-400"
+          />
+          <button
+            onClick={() => handleSave('O/U', prediction.probabilities.over25 > 0.5 ? 'OVER 2.5' : 'UNDER 2.5')}
+            className="absolute top-2 right-2 p-1.5 bg-slate-900/50 rounded-lg text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Save Prediction"
+          >
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
+          </button>
+        </div>
       </div>
+
+      <ValueBetFinder probabilities={prediction.probabilities} />
+
+      {saveStatus !== 'IDLE' && (
+        <div className={`text-[10px] font-black uppercase tracking-widest text-center p-2 rounded-xl border animate-in slide-in-from-top-2 ${
+          saveStatus === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+        }`}>
+          {saveStatus === 'SUCCESS' ? 'Prediction Tracked Successfully' : 'Error Tracking Prediction'}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-lg">
