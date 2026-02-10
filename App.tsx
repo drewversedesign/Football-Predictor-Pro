@@ -285,7 +285,6 @@ const App: React.FC = () => {
                         AI Tactical Scan
                       </button>
                     </div>
-import { ValueBetFinder } from './components/ValueBetFinder';
                     <MatchPredictor match={selectedMatch} customStats={customStats} />
                   </div>
                 ) : (
