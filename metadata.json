@@ -1,0 +1,5 @@
+{
+  "name": "Football Predictor Pro",
+  "description": "A high-performance football match predictor using Poisson distribution, xG modeling, and Gemini AI insights for 1X2, BTTS, and Over/Under markets.",
+  "requestFramePermissions": []
+}
